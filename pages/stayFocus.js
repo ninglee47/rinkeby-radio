@@ -6,6 +6,7 @@ import styles from '../styles/Home.module.css'
 import { ethers } from "ethers";
 import React, { useState, useEffect } from "react";
 import abi from "../utils/radio.json"
+import axios from 'axios';
 
 import { useForm } from "react-hook-form";
 
@@ -28,7 +29,6 @@ export default function StayFocus({token}) {
   const onSubmit = data => wave(data);
 
   console.log(watch("name")); // watch input value by passing the name of it
-
 
   const checkIfWalletConnected = async () => {
     try {
@@ -61,6 +61,15 @@ export default function StayFocus({token}) {
     }
   }
 
+  const getSong = async (songId, token) => {
+    const url = 'http://localhost:6060/getSong'
+    console.log(songId)
+     let data = {songId: songId, token: token}
+     const response = await axios.post(url, {data})
+     console.log(response.data.message)
+     return response.data.message
+  }
+
   const getAllWaves = async () => {
     try {
       const { ethereum } = window
@@ -73,18 +82,26 @@ export default function StayFocus({token}) {
         const waves = await wavePortalContract.getAllSongs()
 
         let wavesCleaned = [];
-        waves.forEach(wave => {
-          wavesCleaned.push({
-            address: wave.waver,
-            timestamp: new Date(wave.timestamp * 1000),
-            name: wave.name,
-            song: wave.link,
-            message: wave.message
-          });
-        });
-        console.log("All waves", wavesCleaned)
+        waves.forEach( (wave) => {
+          const songId = wave.link.slice(31,53)
+          
+          getSong(songId, token)
+          .then((res) => {
+            console.log(res)
+            wavesCleaned.push({
+              address: wave.waver,
+              timestamp: new Date(wave.timestamp * 1000),
+              name: wave.name,
+              song: wave.link,
+              message: wave.message,
+              songName: res.name
+            });
 
-        setAllWaves(wavesCleaned)
+            setAllWaves(wavesCleaned)
+            
+          })
+        });
+        
 
       } else {
         console.log("Ethereum object doesn't exist!")
@@ -93,41 +110,6 @@ export default function StayFocus({token}) {
     } catch (error) {
       console.log(error)
     }
-  }
-
-  const createStation = async () => {
-    try {
-      const { ethereum } = window
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum)
-        const signer = provider.getSigner()
-        const wavePortalContract = new ethers.Contract(contractAddress, contractABI,
-          signer)
-
-        const waveTxn = await wavePortalContract.createStation("Something to Someone")
-        console.log("Mining...", waveTxn.hash)
-
-        await waveTxn.wait()
-        console.log("Mined -- ", waveTxn.hash)
-
-
-        const waves = await wavePortalContract.getAllStations()
-
-        let stationsCleaned = [];
-        waves.forEach(wave => {
-          stationsCleaned.push(
-            wave.station
-          );
-        });
-        console.log("All stations", stationsCleaned)
-      } else {
-        console.log("Ethereum object doesn't exist!")
-      }
-
-    } catch (error) {
-      console.log(error)
-    }
-
   }
 
   const wave = async (data) => {
@@ -230,7 +212,7 @@ export default function StayFocus({token}) {
             <div>Address: {wave.address}</div>
             <div>Time: {wave.timestamp.toString()}</div>
             <div>Name: {wave.name}</div>
-            <div>Song: {wave.song}</div>
+            <div>Song: {wave.songName}</div>
             <div>Message: {wave.message}</div>
           </div>)
       })}
