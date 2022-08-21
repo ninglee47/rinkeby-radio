@@ -10,6 +10,8 @@ import axios from 'axios';
 
 import { useForm } from "react-hook-form";
 
+import SpotifyPlayer from 'react-spotify-player';
+
 export async function getServerSideProps() {
   // Fetch data from external API
   const res = await fetch('http://localhost:6060/getToken')
@@ -27,6 +29,14 @@ export default function StayFocus({token}) {
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
   const onSubmit = data => wave(data);
+  
+  //player
+  const size = {
+    width: '100%',
+    height: 300,
+  };
+  const view = 'list'; // or 'coverart'
+  const theme = 'black'; // or 'white'
 
   console.log(watch("name")); // watch input value by passing the name of it
 
@@ -87,14 +97,17 @@ export default function StayFocus({token}) {
           
           getSong(songId, token)
           .then((res) => {
-            console.log(res)
+            console.log(res.album.images[1])
             wavesCleaned.push({
               address: wave.waver,
               timestamp: new Date(wave.timestamp * 1000),
               name: wave.name,
               song: wave.link,
               message: wave.message,
-              songName: res.name
+              songName: res.name,
+              artist: res.artists[0].name,
+              album: res.album.name,
+              image: res.album.images[1].url
             });
 
             setAllWaves(wavesCleaned)
@@ -213,7 +226,18 @@ export default function StayFocus({token}) {
             <div>Time: {wave.timestamp.toString()}</div>
             <div>Name: {wave.name}</div>
             <div>Song: {wave.songName}</div>
+            <div>Artist: {wave.artist}</div>
+            <div>
+              <Image src={wave.image} alt={wave.album} height='300' width={'300'}/>
+              Album: {wave.album}
+              </div>
             <div>Message: {wave.message}</div>
+            <SpotifyPlayer
+               uri="spotify:album:1TIUsv8qmYLpBEhvmBmyBk"
+               size={size}
+               view={view}
+               theme={theme}
+            />
           </div>)
       })}
       </>
