@@ -9,6 +9,7 @@ import abi from "../utils/radio.json"
 import axios from 'axios';
 
 import { useForm } from "react-hook-form";
+import {useSession, signIn, signOut} from 'next-auth/react';
 
 import SpotifyPlayer from 'react-spotify-player';
 
@@ -29,6 +30,8 @@ export default function StayFocus({token}) {
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
   const onSubmit = data => wave(data);
+
+  const {data: session} = useSession();
   
   //player
   const size = {
@@ -38,11 +41,10 @@ export default function StayFocus({token}) {
   const view = 'list'; // or 'coverart'
   const theme = 'black'; // or 'white'
 
-  console.log(watch("name")); // watch input value by passing the name of it
+  //console.log(watch("name")); // watch input value by passing the name of it
 
   const checkIfWalletConnected = async () => {
     try {
-      console.log("Checking wallet")
       const { ethereum } = window;
 
       if (!ethereum) {
@@ -56,12 +58,12 @@ export default function StayFocus({token}) {
      * Check if we're authorized to access the user's wallet
      */
       const accounts = await ethereum.request({ method: "eth_accounts" })
-      console.log(accounts)
+      //console.log(accounts)
 
       if (accounts.length != 0) {
         const account = accounts[0];
         setCurrentAccount(account)
-        console.log("Found an authorized account:", account);
+        //console.log("Found an authorized account:", account);
       } else {
         console.log("No authorized account found")
       }
@@ -73,10 +75,9 @@ export default function StayFocus({token}) {
 
   const getSong = async (songId, token) => {
     const url = 'http://localhost:6060/getSong'
-    console.log(songId)
      let data = {songId: songId, token: token}
      const response = await axios.post(url, {data})
-     console.log(response.data.message)
+     //console.log(response.data.message)
      return response.data.message
   }
 
@@ -97,7 +98,7 @@ export default function StayFocus({token}) {
           
           getSong(songId, token)
           .then((res) => {
-            console.log(res.album.images[1])
+            //console.log(res.album.images[1])
             wavesCleaned.push({
               address: wave.waver,
               timestamp: new Date(wave.timestamp * 1000),
@@ -107,7 +108,8 @@ export default function StayFocus({token}) {
               songName: res.name,
               artist: res.artists[0].name,
               album: res.album.name,
-              image: res.album.images[1].url
+              image: res.album.images[1].url,
+              uri: res.uri
             });
 
             setAllWaves(wavesCleaned)
@@ -176,13 +178,33 @@ export default function StayFocus({token}) {
 
       const accounts = await ethereum.request({ method: "eth_requestAccounts" });
 
-      console.log("Connected", accounts[0]);
+      //console.log("Connected", accounts[0]);
       setCurrentAccount(accounts[0]);
 
     } catch (error) {
       console.log(error)
     }
   }
+  
+  const authSpotify = () => {
+      if (session) {
+        console.log("session", session)
+        return (
+          <>
+            Signed in as {session?.token?.email} <br />
+            <button onClick={() => signOut()}>Sign out</button>
+          </>
+        );
+      } else {
+        return (
+          <>
+            Not signed in <br />
+            <button onClick={() => signIn()}>Sign in</button>
+          </>
+        );
+      }
+  };
+  
 
     useEffect(() => {
       checkIfWalletConnected()
@@ -216,6 +238,8 @@ export default function StayFocus({token}) {
          <div><input type="submit" /></div>
        </form>
 
+      {authSpotify()}
+
       {allWaves.map((wave, index) => {
         return (
           <div key={index} style={{
@@ -233,7 +257,7 @@ export default function StayFocus({token}) {
               </div>
             <div>Message: {wave.message}</div>
             <SpotifyPlayer
-               uri="spotify:album:1TIUsv8qmYLpBEhvmBmyBk"
+               uri={wave.uri}
                size={size}
                view={view}
                theme={theme}

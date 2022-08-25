@@ -82,6 +82,12 @@ export default function Home() {
       <Link href="/somethingToSomeone">
         <a>Something To Someone</a>
       </Link>
+      
+      <div>
+        <Link href="/authTest">
+         <a>Auth Test</a>
+        </Link>
+      </div>
 
       <div>
         A little support?
