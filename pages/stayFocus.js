@@ -32,6 +32,7 @@ export default function StayFocus({token}) {
   const onSubmit = data => wave(data);
 
   const {data: session} = useSession();
+  const [list, setList] = useState([]);
   
   //player
   const size = {
@@ -185,6 +186,13 @@ export default function StayFocus({token}) {
       console.log(error)
     }
   }
+
+  const getMyPlaylists = async () => {
+    const res = await fetch('/api/playlists');
+    const {items} = await res.json();
+    setList(items);
+  };
+  
   
   const authSpotify = () => {
       if (session) {
@@ -193,6 +201,13 @@ export default function StayFocus({token}) {
           <>
             Signed in as {session?.token?.email} <br />
             <button onClick={() => signOut()}>Sign out</button>
+            <button onClick={() => getMyPlaylists()}>Get all my playlists</button>
+            {list.map((item) => (
+          <div key={item.id}>
+            <h1>{item.name}</h1>
+            <img src={item.images[0]?.url} width="100" />
+          </div>
+        ))}
           </>
         );
       } else {
@@ -204,8 +219,8 @@ export default function StayFocus({token}) {
         );
       }
   };
-  
 
+  
     useEffect(() => {
       checkIfWalletConnected()
       //getToken()
