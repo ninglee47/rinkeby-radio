@@ -13,11 +13,18 @@ import {useSession, signIn, signOut} from 'next-auth/react';
 
 import SpotifyPlayer from 'react-spotify-player';
 
-export async function getServerSideProps() {
+export async function getServerSideProps(context) {
   // Fetch data from external API
-  const res = await fetch('http://localhost:6060/getToken')
-  const data = await res.json()
-  const token = data.message.access_token
+  //const res = await fetch('http://localhost:6060/getToken')
+  console.log(context.req.headers.host)
+  const res = await fetch('http://' + context.req.headers.host + '/api/getToken')
+ 
+  const items = await res.json();
+  const token = items.items
+ 
+  //const data = await res.json()
+  //const token = data.message.access_token
+  //return {props: {token}}
   return {props: {token}}
 }
 
@@ -75,11 +82,11 @@ export default function StayFocus({token}) {
   }
 
   const getSong = async (songId, token) => {
-    const url = 'http://localhost:6060/getSong'
+    //const url = 'http://localhost:6060/getSong'
      let data = {songId: songId, token: token}
-     const response = await axios.post(url, {data})
-     //console.log(response.data.message)
-     return response.data.message
+     const response = await axios.post('api/getSong', {data})
+     console.log(response)
+     return response.data.items
   }
 
   const getAllWaves = async () => {
@@ -181,6 +188,7 @@ export default function StayFocus({token}) {
 
       //console.log("Connected", accounts[0]);
       setCurrentAccount(accounts[0]);
+      getAllWaves()
 
     } catch (error) {
       console.log(error)
